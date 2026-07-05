@@ -1,93 +1,82 @@
-# 🏋️ CultCoach — Fitness App Shell
+# 🏋️ CultCoach — Week 4: Connect App to API
 
-A polished React Native + Expo Go fitness app shell with 4 screens, bottom tab navigation, and mock data. No backend required.
-
----
-
-## 📱 Screens
-
-| Screen | Description |
-|---|---|
-| **Home** | Dashboard with streak, weekly volume chart, today's workout, and recent sessions |
-| **Workout Log** | Expandable workout cards with per-exercise set/rep/weight breakdown |
-| **Exercise Library** | Searchable 2-column grid with muscle-group filter and detail modal |
-| **Profile** | User stats, live BMI calculator with visual gauge, and settings |
+React Native (Expo) fitness app connected to a Flask REST API. Users can register, log in, and log/view real workout sessions — all data is real, fetched from and posted to a live backend (no more mock data for auth/workouts).
 
 ---
 
-## 🚀 Quick Start
+## ✅ What's implemented
 
-### 1. Install dependencies
+- **Auth flow**: Register → Login → JWT access & refresh tokens stored in `AsyncStorage`
+- **Persistent login**: closing and reopening the app keeps the user logged in until they log out
+- **Workout Log screen**: fetches real workout sessions from `GET /api/workouts`
+- **Add Session form**: posts new sessions to `POST /api/workouts`, with client-side validation (required fields, positive numbers for duration/sets/reps)
+- **Loading states**: spinners shown while auth checks and API calls are in progress
+- **Error handling**: toast notifications (via `react-native-toast-message`) for failed requests (invalid login, validation errors, network issues)
+
+---
+
+## 🗂 New files added this week
+---
+
+## 🔌 Backend dependency
+
+This app expects the **Week 2 Flask API** (`fitness_api`) to be running locally.
+
+### Running the backend
 
 ```bash
-cd CultCoach
-npm install
+cd fitness_api
+python -m venv venv
+.\venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+copy .env.example .env         # fill in SECRET_KEY and JWT_SECRET_KEY with random values
+python app.py
 ```
 
-### 2. Start Expo
+The API will run on `http://<your-local-ip>:5000`.
+
+### Pointing the app at your backend
+
+Open `api/axiosConfig.js` and set `baseURL` to your machine's local network IP (not `localhost` — required for physical devices/Expo Go):
+
+```js
+baseURL: 'http://YOUR_LOCAL_IP:5000/api',
+```
+
+Find your IP with `ipconfig` (Windows) or `ifconfig` (Mac/Linux). Both the phone running Expo Go and the computer running Flask must be on the **same WiFi network**.
+
+---
+
+## 🚀 Running the app
 
 ```bash
+npm install
 npx expo start
 ```
 
-### 3. Open on your phone
-- Install **Expo Go** from the App Store or Google Play
-- Scan the QR code in your terminal
+Scan the QR code with Expo Go (Android) or the Camera app (iOS).
 
 ---
 
-## 📦 Dependencies
+## 🔑 Auth endpoints used
 
-```
-@react-navigation/native          ^6.x
-@react-navigation/bottom-tabs     ^6.x
-react-native-screens              ^3.x
-react-native-safe-area-context    ^4.x
-@expo/vector-icons                ^14.x  (bundled with Expo)
-expo                              ~51.x
-```
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | Create account (`username`, `email`, `password`) |
+| POST | `/api/auth/login` | Log in (`username`, `password`) → returns `access_token`, `refresh_token`, `user` |
+| GET | `/api/auth/profile` | Get current logged-in user (used to restore session on app restart) |
 
----
+## 🏋️ Workout endpoints used
 
-## 🗂 Project Structure
-
-```
-CultCoach/
-├── App.js                    ← Navigation root (bottom tabs)
-├── app.json                  ← Expo config
-├── package.json
-├── babel.config.js
-├── data/
-│   └── mockData.js           ← All mock data + theme colours
-└── screens/
-    ├── HomeScreen.js         ← Dashboard
-    ├── WorkoutLogScreen.js   ← Expandable workout history
-    ├── ExerciseLibraryScreen.js  ← Searchable exercise grid + modal
-    └── ProfileScreen.js      ← BMI calculator + user stats
-```
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/workouts` | Fetch all workout sessions for the logged-in user |
+| POST | `/api/workouts` | Create a new workout session, optionally with nested exercises |
 
 ---
 
-## 🎨 Design System
+## ⚠️ Known limitations
 
-The app uses a consistent dark theme defined in `data/mockData.js`:
-
-```js
-COLORS.bg        = '#0F172A'  // Page background
-COLORS.surface   = '#1E293B'  // Cards
-COLORS.card      = '#263347'  // Nested cards
-COLORS.accent    = '#6366F1'  // Indigo primary
-COLORS.success   = '#22C55E'  // Green
-COLORS.warning   = '#F59E0B'  // Amber
-COLORS.danger    = '#EF4444'  // Red
-```
-
----
-
-## 🔧 Next Steps (when adding a backend)
-
-- Replace `data/mockData.js` with API calls (Supabase / Firebase / REST)
-- Add `AsyncStorage` for offline caching
-- Wire up "Start Workout" → live timer screen
-- Add auth (Expo Auth Session or Clerk)
-- Persist BMI history with user profiles
+- Access token refresh (`/api/auth/refresh`) is not yet wired up — tokens expire after 1 hour, requiring re-login
+- Editing/deleting existing workout sessions is not yet implemented (create + view only)
+- Exercise Library and Profile screens still use mock data (out of scope for this week's task)
